@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Confirmar Asistencia</title>
+
+  <!-- Bootstrap 5 -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+  />
+
+  <style>
+    body { background: #f8f9fa; }
+    .registro {
+      border: 1px solid #dee2e6;
+      border-radius: .5rem;
+      padding: 1rem;
+      background: #fff;
+    }
+    .registro + .registro { margin-top: 1rem; }
+    .oculto { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="container py-4">
+    <h3 class="text-center mb-4">Por favor confirmá tu asistencia a mi Cumple</h3>
+
+    <div class="d-flex justify-content-center">
+      <button id="btnConfirmar" class="btn btn-primary btn-lg px-4">
+        Confirmar Asistencia
+      </button>
+    </div>
+
+    <!-- FORMULARIO OCULTO -->
+    <div id="form-container" class="oculto mt-4">
+      <form id="asistenciaForm" novalidate>
+        <div id="registros-container">
+
+          <!-- REGISTRO 1 -->
+          <div class="registro" data-index="1">
+            <h5>Persona 1</h5>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Nombre *</label>
+                <input type="text" id="nombre-1" class="form-control" required>
+                <div class="invalid-feedback">El nombre es obligatorio.</div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Apellido *</label>
+                <input type="text" id="apellido-1" class="form-control" required>
+                <div class="invalid-feedback">El apellido es obligatorio.</div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">DNI *</label>
+                <input type="text" id="dni-1" class="form-control" maxlength="9" required inputmode="numeric">
+                <div class="form-text">Solo números (7 a 9 dígitos).</div>
+                <div class="invalid-feedback">Ingresá un DNI válido.</div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Email (opcional)</label>
+                <input type="email" id="email-1" class="form-control" placeholder="tu@email.com">
+                <div class="invalid-feedback">Ingresá un email válido.</div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Comentarios (sos Celiaco/a, Vegetariano/a, Diabetico/a</label>
+                <textarea id="comentarios-1" class="form-control" rows="2" placeholder="(opcional)"></textarea>
+              </div>
+
+              <!-- FECHA AUTOMÁTICA OCULTA -->
+              <input type="hidden" id="fecha-1">
+            </div>
+          </div>
+
+          <!-- REGISTROS 2–5 GENERADOS AUTOMÁTICAMENTE -->
+          <script>
+            for (let i = 2; i <= 5; i++) {
+              document.write(`
+                <div class="registro oculto" data-index="${i}">
+                  <h5>Persona ${i}</h5>
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <label class="form-label">Nombre *</label>
+                      <input type="text" id="nombre-${i}" class="form-control">
+                      <div class="invalid-feedback">El nombre es obligatorio.</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Apellido *</label>
+                      <input type="text" id="apellido-${i}" class="form-control">
+                      <div class="invalid-feedback">El apellido es obligatorio.</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">DNI *</label>
+                      <input type="text" id="dni-${i}" class="form-control" maxlength="9" inputmode="numeric">
+                      <div class="form-text">Solo números (7 a 9 dígitos).</div>
+                      <div class="invalid-feedback">Ingresá un DNI válido.</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Email (opcional)</label>
+                      <input type="email" id="email-${i}" class="form-control" placeholder="(opcional)">
+                      <div class="invalid-feedback">Ingresá un email válido.</div>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label">Comentarios</label>
+                      <textarea id="comentarios-${i}" class="form-control" rows="2" placeholder="(opcional)"></textarea>
+                    </div>
+                    <input type="hidden" id="fecha-${i}">
+                  </div>
+                </div>
+              `);
+            }
+          </script>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+          <button type="button" id="btnAgregar" class="btn btn-outline-secondary flex-fill">
+            Agregar otra persona
+          </button>
+          <button type="submit" class="btn btn-success flex-fill">
+            ENVIAR
+          </button>
+        </div>
+      </form>
+
+      <div id="alerta" class="alert mt-3 d-none"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Pegar aquí la URL del WebApp (debe terminar en /exec)
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzN7znUk70M2EYjRk_5u4FgHO374tc2eTcffjXaGQqhacZH6B92ujkVkivpitY6Jbd-/exec";
+
+    const btnConfirmar = document.getElementById("btnConfirmar");
+    const formContainer = document.getElementById("form-container");
+    const btnAgregar = document.getElementById("btnAgregar");
+    const alerta = document.getElementById("alerta");
+
+    // Mostrar formulario
+    btnConfirmar.addEventListener("click", () => {
+      formContainer.classList.remove("oculto");
+      setFechaHoy();
+    });
+
+    // Agregar persona (máximo 5)
+    btnAgregar.addEventListener("click", () => {
+      const ocultos = [...document.querySelectorAll(".registro.oculto")];
+      if (ocultos.length > 0) ocultos[0].classList.remove("oculto");
+    });
+
+    // Asignar fecha oculta = hoy (YYYY-MM-DD)
+    function setFechaHoy() {
+      const hoy = new Date().toISOString().split("T")[0];
+      for (let i = 1; i <= 5; i++) {
+        const campo = document.getElementById(`fecha-${i}`);
+        if (campo) campo.value = hoy;
+      }
+    }
+
+    // DNI solo números (máx 9)
+    document.addEventListener("input", (e) => {
+      if (e.target.id.startsWith("dni-")) {
+        e.target.value = e.target.value.replace(/\D/g, "").substring(0, 9);
+      }
+    });
+
+    function val(id) { return document.getElementById(id)?.value.trim() || ""; }
+    function marcarInvalido(id) { document.getElementById(id).classList.add("is-invalid"); }
+    function limpiarInvalidos() { document.querySelectorAll(".is-invalid").forEach(e => e.classList.remove("is-invalid")); }
+    function mostrarAlerta(msg, tipo="success") {
+      alerta.className = `alert alert-${tipo}`;
+      alerta.textContent = msg;
+      alerta.classList.remove("d-none");
+    }
+
+    // Validaciones básicas de front
+    function validarRegistro(i, visible) {
+      const nombre = val(`nombre-${i}`);
+      const apellido = val(`apellido-${i}`);
+      const dni = val(`dni-${i}`);
+      const email = val(`email-${i}`);
+      const dniRegex = /^\d{7,9}$/;
+      let ok = true;
+
+      const algunDato = nombre || apellido || dni || email || val(`comentarios-${i}`);
+      if (!visible && !algunDato) return { ok: true }; // ignorar vacíos ocultos
+
+      if (!nombre) { marcarInvalido(`nombre-${i}`); ok = false; }
+      if (!apellido) { marcarInvalido(`apellido-${i}`); ok = false; }
+      if (!dni || !dniRegex.test(dni)) { marcarInvalido(`dni-${i}`); ok = false; }
+
+      // Email es opcional; si lo completan, usamos la validación nativa del input
+      const emailEl = document.getElementById(`email-${i}`);
+      if (email && !emailEl.checkValidity()) { marcarInvalido(`email-${i}`); ok = false; }
+
+      return {
+        ok,
+        data: {
+          nombre, apellido, dni, email,
+          comentarios: val(`comentarios-${i}`),
+          fecha: val(`fecha-${i}`)
+        }
+      };
+    }
+
+    // Envío (request simple sin preflight; no se lee la respuesta)
+    document.getElementById("asistenciaForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      limpiarInvalidos();
+
+      const registros = [];
+      let valido = true;
+
+      for (let i = 1; i <= 5; i++) {
+        const regDiv = document.querySelector(`.registro[data-index="${i}"]`);
+        const visible = !regDiv.classList.contains("oculto");
+        const res = validarRegistro(i, visible);
+        if (!res.ok) valido = false;
+        if (res.data && (res.data.nombre || res.data.apellido || res.data.dni || res.data.email || res.data.comentarios)) {
+          registros.push(res.data);
+        }
+      }
+
+      if (!valido) {
+        mostrarAlerta("Revisá los campos marcados en rojo.", "danger");
+        return;
+      }
+      if (registros.length === 0) {
+        mostrarAlerta("Cargá al menos una persona.", "warning");
+        return;
+      }
+
+      try {
+        await fetch(WEBAPP_URL, {
+          method: "POST",
+          mode: "no-cors",                                     // evita CORS
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, // simple request, sin preflight
+          body: JSON.stringify({ registros })
+        });
+
+        // Como la respuesta es 'opaque' en no-cors, mostramos el agradecimiento sin leer resp
+        mostrarAlerta("Muchas gracias por confirmar tu presencia en mi Cumple", "success");
+        e.target.reset();
+        setFechaHoy();
+        // Dejar visible solo el primer bloque nuevamente
+        [...document.querySelectorAll(".registro")].forEach((el, idx) => {
+          el.classList.toggle("oculto", idx !== 0);
+        });
+
+      } catch (err) {
+        console.error(err);
+        mostrarAlerta("Ocurrió un error de red. Intentá nuevamente.", "danger");
+      }
+    });
+  </script>
+</body>
+</html>
+

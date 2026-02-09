@@ -28,14 +28,15 @@
   <div class="container py-4">
     <h3 class="text-center mb-4">Por favor confirmá tu asistencia a mi Cumple</h3>
 
-    <div class="d-flex justify-content-center">
+    <!-- Botón inicial -->
+    <div class="d-flex justify-content-center mb-3">
       <button id="btnConfirmar" class="btn btn-primary btn-lg px-4">
         Confirmar Asistencia
       </button>
     </div>
 
-    <!-- FORMULARIO OCULTO -->
-    <div id="form-container" class="oculto mt-4">
+    <!-- FORMULARIO -->
+    <div id="form-container" class="oculto">
       <form id="asistenciaForm" novalidate>
         <div id="registros-container">
 
@@ -64,18 +65,9 @@
               </div>
 
               <div class="col-12">
-                <label class="form-label">Email (opcional)</label>
-                <input type="email" id="email-1" class="form-control" placeholder="tu@email.com">
-                <div class="invalid-feedback">Ingresá un email válido.</div>
-              </div>
-
-              <div class="col-12">
-                <label class="form-label">Comentarios (sos Celiaco/a, Vegetariano/a, Diabetico/a</label>
+                <label class="form-label">Comentarios (opcional – dieta/restricciones)</label>
                 <textarea id="comentarios-1" class="form-control" rows="2" placeholder="(opcional)"></textarea>
               </div>
-
-              <!-- FECHA AUTOMÁTICA OCULTA -->
-              <input type="hidden" id="fecha-1">
             </div>
           </div>
 
@@ -103,15 +95,9 @@
                       <div class="invalid-feedback">Ingresá un DNI válido.</div>
                     </div>
                     <div class="col-12">
-                      <label class="form-label">Email (opcional)</label>
-                      <input type="email" id="email-${i}" class="form-control" placeholder="(opcional)">
-                      <div class="invalid-feedback">Ingresá un email válido.</div>
-                    </div>
-                    <div class="col-12">
                       <label class="form-label">Comentarios</label>
                       <textarea id="comentarios-${i}" class="form-control" rows="2" placeholder="(opcional)"></textarea>
                     </div>
-                    <input type="hidden" id="fecha-${i}">
                   </div>
                 </div>
               `);
@@ -131,6 +117,18 @@
 
       <div id="alerta" class="alert mt-3 d-none"></div>
     </div>
+
+    <!-- RESULTADO (se muestra tras ENVIAR) -->
+    <div id="resultado" class="mt-4 d-none">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title mb-3 text-success">Muchas gracias por confirmar tu presencia</h5>
+          <p class="mb-2">A nombre de:</p>
+          <ul id="listaNombres" class="mb-0"></ul>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Bootstrap JS -->
@@ -140,15 +138,17 @@
     // Pegar aquí la URL del WebApp (debe terminar en /exec)
     const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzN7znUk70M2EYjRk_5u4FgHO374tc2eTcffjXaGQqhacZH6B92ujkVkivpitY6Jbd-/exec";
 
-    const btnConfirmar = document.getElementById("btnConfirmar");
-    const formContainer = document.getElementById("form-container");
-    const btnAgregar = document.getElementById("btnAgregar");
-    const alerta = document.getElementById("alerta");
+    const btnConfirmar   = document.getElementById("btnConfirmar");
+    const formContainer  = document.getElementById("form-container");
+    const btnAgregar     = document.getElementById("btnAgregar");
+    const alerta         = document.getElementById("alerta");
+    const resultadoBox   = document.getElementById("resultado");
+    const listaNombresEl = document.getElementById("listaNombres");
 
-    // Mostrar formulario
+    // 1) Al click en "Confirmar Asistencia": ocultar botón y mostrar formulario
     btnConfirmar.addEventListener("click", () => {
-      formContainer.classList.remove("oculto");
-      setFechaHoy();
+      btnConfirmar.classList.add("d-none");         // desaparece el botón
+      formContainer.classList.remove("oculto");     // aparece el formulario
     });
 
     // Agregar persona (máximo 5)
@@ -157,18 +157,9 @@
       if (ocultos.length > 0) ocultos[0].classList.remove("oculto");
     });
 
-    // Asignar fecha oculta = hoy (YYYY-MM-DD)
-    function setFechaHoy() {
-      const hoy = new Date().toISOString().split("T")[0];
-      for (let i = 1; i <= 5; i++) {
-        const campo = document.getElementById(`fecha-${i}`);
-        if (campo) campo.value = hoy;
-      }
-    }
-
     // DNI solo números (máx 9)
     document.addEventListener("input", (e) => {
-      if (e.target.id.startsWith("dni-")) {
+      if (e.target.id && e.target.id.startsWith("dni-")) {
         e.target.value = e.target.value.replace(/\D/g, "").substring(0, 9);
       }
     });
@@ -182,37 +173,28 @@
       alerta.classList.remove("d-none");
     }
 
-    // Validaciones básicas de front
+    // Validaciones básicas de front (sin email/fecha)
     function validarRegistro(i, visible) {
       const nombre = val(`nombre-${i}`);
       const apellido = val(`apellido-${i}`);
       const dni = val(`dni-${i}`);
-      const email = val(`email-${i}`);
+      const comentarios = val(`comentarios-${i}`);
       const dniRegex = /^\d{7,9}$/;
+
+      // ignorar completamente si está oculto y vacío
+      if (!visible && !nombre && !apellido && !dni && !comentarios) {
+        return { ok: true, data: null };
+      }
+
       let ok = true;
-
-      const algunDato = nombre || apellido || dni || email || val(`comentarios-${i}`);
-      if (!visible && !algunDato) return { ok: true }; // ignorar vacíos ocultos
-
       if (!nombre) { marcarInvalido(`nombre-${i}`); ok = false; }
       if (!apellido) { marcarInvalido(`apellido-${i}`); ok = false; }
       if (!dni || !dniRegex.test(dni)) { marcarInvalido(`dni-${i}`); ok = false; }
 
-      // Email es opcional; si lo completan, usamos la validación nativa del input
-      const emailEl = document.getElementById(`email-${i}`);
-      if (email && !emailEl.checkValidity()) { marcarInvalido(`email-${i}`); ok = false; }
-
-      return {
-        ok,
-        data: {
-          nombre, apellido, dni, email,
-          comentarios: val(`comentarios-${i}`),
-          fecha: val(`fecha-${i}`)
-        }
-      };
+      return { ok, data: { nombre, apellido, dni, comentarios } };
     }
 
-    // Envío (request simple sin preflight; no se lee la respuesta)
+    // 3) Envío: request simple sin preflight; al terminar se muestra lista + mensaje y se oculta el formulario
     document.getElementById("asistenciaForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       limpiarInvalidos();
@@ -225,8 +207,9 @@
         const visible = !regDiv.classList.contains("oculto");
         const res = validarRegistro(i, visible);
         if (!res.ok) valido = false;
-        if (res.data && (res.data.nombre || res.data.apellido || res.data.dni || res.data.email || res.data.comentarios)) {
-          registros.push(res.data);
+        if (res.data) {
+          const { nombre, apellido, dni, comentarios } = res.data;
+          if (nombre || apellido || dni || comentarios) registros.push(res.data);
         }
       }
 
@@ -240,21 +223,27 @@
       }
 
       try {
+        // Envío sin CORS/preflight
         await fetch(WEBAPP_URL, {
           method: "POST",
-          mode: "no-cors",                                     // evita CORS
-          headers: { "Content-Type": "text/plain;charset=utf-8" }, // simple request, sin preflight
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify({ registros })
         });
 
-        // Como la respuesta es 'opaque' en no-cors, mostramos el agradecimiento sin leer resp
-        mostrarAlerta("Muchas gracias por confirmar tu presencia en mi Cumple", "success");
-        e.target.reset();
-        setFechaHoy();
-        // Dejar visible solo el primer bloque nuevamente
-        [...document.querySelectorAll(".registro")].forEach((el, idx) => {
-          el.classList.toggle("oculto", idx !== 0);
+        // Construir lista de nombres para mostrar
+        listaNombresEl.innerHTML = "";
+        registros.forEach(r => {
+          const li = document.createElement("li");
+          li.textContent = `${r.nombre} ${r.apellido}`;
+          listaNombresEl.appendChild(li);
         });
+
+        // Ocultar formulario y mostrar resultado
+        document.getElementById("asistenciaForm").reset();
+        formContainer.classList.add("oculto");
+        resultadoBox.classList.remove("d-none");
+        alerta.classList.add("d-none"); // por si había alertas previas
 
       } catch (err) {
         console.error(err);
@@ -264,4 +253,3 @@
   </script>
 </body>
 </html>
-

@@ -26,7 +26,6 @@
 <body>
 
   <div class="container py-4">
-
     <h3 class="text-center mb-4">Por favor confirmá tu asistencia a mi Cumple</h3>
 
     <div class="d-flex justify-content-center">
@@ -37,7 +36,6 @@
 
     <!-- FORMULARIO OCULTO -->
     <div id="form-container" class="oculto mt-4">
-
       <form id="asistenciaForm" novalidate>
         <div id="registros-container">
 
@@ -67,7 +65,6 @@
 
               <div class="col-12">
                 <label class="form-label">Email (opcional)</label>
-                <!-- Email ya NO es obligatorio -->
                 <input type="email" id="email-1" class="form-control" placeholder="tu@email.com">
                 <div class="invalid-feedback">Ingresá un email válido.</div>
               </div>
@@ -140,8 +137,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // ⬅️ Pegá aquí tu URL de Apps Script WebApp cuando lo publiques
-    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyFzpqj-fBA5weU4rwHDXQkAwAmmeOmEDWnLa3WEfKacBIoldX7u0YIjx_h7E6Araeh/exec";
+    // Pegar aquí la URL del WebApp (debe terminar en /exec)
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzN7znUk70M2EYjRk_5u4FgHO374tc2eTcffjXaGQqhacZH6B92ujkVkivpitY6Jbd-/exec";
 
     const btnConfirmar = document.getElementById("btnConfirmar");
     const formContainer = document.getElementById("form-container");
@@ -176,6 +173,15 @@
       }
     });
 
+    function val(id) { return document.getElementById(id)?.value.trim() || ""; }
+    function marcarInvalido(id) { document.getElementById(id).classList.add("is-invalid"); }
+    function limpiarInvalidos() { document.querySelectorAll(".is-invalid").forEach(e => e.classList.remove("is-invalid")); }
+    function mostrarAlerta(msg, tipo="success") {
+      alerta.className = `alert alert-${tipo}`;
+      alerta.textContent = msg;
+      alerta.classList.remove("d-none");
+    }
+
     // Validaciones básicas de front
     function validarRegistro(i, visible) {
       const nombre = val(`nombre-${i}`);
@@ -185,38 +191,28 @@
       const dniRegex = /^\d{7,9}$/;
       let ok = true;
 
-      // Solo validamos registros con algún dato cargado o visibles
       const algunDato = nombre || apellido || dni || email || val(`comentarios-${i}`);
       if (!visible && !algunDato) return { ok: true }; // ignorar vacíos ocultos
 
-      // Requeridos
-      if (!nombre) marcarInvalido(`nombre-${i}`), ok = false;
-      if (!apellido) marcarInvalido(`apellido-${i}`), ok = false;
-      if (!dni || !dniRegex.test(dni)) marcarInvalido(`dni-${i}`), ok = false;
+      if (!nombre) { marcarInvalido(`nombre-${i}`); ok = false; }
+      if (!apellido) { marcarInvalido(`apellido-${i}`); ok = false; }
+      if (!dni || !dniRegex.test(dni)) { marcarInvalido(`dni-${i}`); ok = false; }
 
-      // Email opcional, si lo pone validamos formato mínimo del input
+      // Email es opcional; si lo completan, usamos la validación nativa del input
       const emailEl = document.getElementById(`email-${i}`);
-      if (email && !emailEl.checkValidity()) marcarInvalido(`email-${i}`), ok = false;
+      if (email && !emailEl.checkValidity()) { marcarInvalido(`email-${i}`); ok = false; }
 
-      return { ok, data: {
-        nombre, apellido, dni, email,
-        comentarios: val(`comentarios-${i}`),
-        fecha: val(`fecha-${i}`)
-      }};
+      return {
+        ok,
+        data: {
+          nombre, apellido, dni, email,
+          comentarios: val(`comentarios-${i}`),
+          fecha: val(`fecha-${i}`)
+        }
+      };
     }
 
-    function val(id) { return document.getElementById(id)?.value.trim() || ""; }
-    function marcarInvalido(id) { document.getElementById(id).classList.add("is-invalid"); }
-    function limpiarInvalidos() {
-      document.querySelectorAll(".is-invalid").forEach(e => e.classList.remove("is-invalid"));
-    }
-    function mostrarAlerta(msg, tipo="success") {
-      alerta.className = `alert alert-${tipo}`;
-      alerta.textContent = msg;
-      alerta.classList.remove("d-none");
-    }
-
-    // Envío
+    // Envío (request simple sin preflight; no se lee la respuesta)
     document.getElementById("asistenciaForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       limpiarInvalidos();
@@ -244,31 +240,22 @@
       }
 
       try {
-        const resp = await fetch(WEBAPP_URL, {
+        await fetch(WEBAPP_URL, {
           method: "POST",
-          mode: "cors",
-          headers: { "Content-Type": "application/json" },
+          mode: "no-cors",                                     // evita CORS
+          headers: { "Content-Type": "text/plain;charset=utf-8" }, // simple request, sin preflight
           body: JSON.stringify({ registros })
         });
 
-        // Intentamos leer respuesta JSON; si falla igual mostramos agradecimiento
-        let ok = resp.ok;
-        try {
-          const data = await resp.json();
-          ok = ok && (data.status === "ok");
-        } catch (_) {}
+        // Como la respuesta es 'opaque' en no-cors, mostramos el agradecimiento sin leer resp
+        mostrarAlerta("Muchas gracias por confirmar tu presencia en mi Cumple", "success");
+        e.target.reset();
+        setFechaHoy();
+        // Dejar visible solo el primer bloque nuevamente
+        [...document.querySelectorAll(".registro")].forEach((el, idx) => {
+          el.classList.toggle("oculto", idx !== 0);
+        });
 
-        if (ok) {
-          mostrarAlerta("Muchas gracias por confirmar tu presencia en mi Cumple", "success");
-          e.target.reset();
-          setFechaHoy();
-          // Dejar visible solo el primer bloque nuevamente
-          [...document.querySelectorAll(".registro")].forEach((el, idx) => {
-            el.classList.toggle("oculto", idx !== 0);
-          });
-        } else {
-          mostrarAlerta("No pudimos guardar los datos. Intentá nuevamente.", "danger");
-        }
       } catch (err) {
         console.error(err);
         mostrarAlerta("Ocurrió un error de red. Intentá nuevamente.", "danger");
@@ -277,4 +264,3 @@
   </script>
 </body>
 </html>
-

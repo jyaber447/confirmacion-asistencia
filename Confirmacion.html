@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Confirmar Asistencia</title>
 
-  <!-- Bootstrap 5 -->
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-  />
+  <!-- Bootstrap -->
+  <link rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
 
   <style>
     body { background: #f8f9fa; }
@@ -20,16 +18,18 @@
       background: #fff;
     }
     .registro + .registro { margin-top: 1rem; }
-    .oculto { display: none; }
+    .oculto { display: none !important; }
   </style>
 </head>
+
 <body>
 
   <div class="container py-4">
+
     <h3 class="text-center mb-4">Por favor confirmá tu asistencia a mi Cumple</h3>
 
-    <!-- Botón inicial -->
-    <div class="d-flex justify-content-center mb-3">
+    <!-- BOTÓN INICIAL -->
+    <div id="boton-inicial" class="d-flex justify-content-center mb-3">
       <button id="btnConfirmar" class="btn btn-primary btn-lg px-4">
         Confirmar Asistencia
       </button>
@@ -45,211 +45,186 @@
             <h5>Persona 1</h5>
 
             <div class="row g-3">
+
               <div class="col-12">
                 <label class="form-label">Nombre *</label>
                 <input type="text" id="nombre-1" class="form-control" required>
-                <div class="invalid-feedback">El nombre es obligatorio.</div>
               </div>
 
               <div class="col-12">
                 <label class="form-label">Apellido *</label>
                 <input type="text" id="apellido-1" class="form-control" required>
-                <div class="invalid-feedback">El apellido es obligatorio.</div>
               </div>
 
               <div class="col-12">
                 <label class="form-label">DNI *</label>
-                <input type="text" id="dni-1" class="form-control" maxlength="9" required inputmode="numeric">
+                <input type="text" id="dni-1" class="form-control" maxlength="9" inputmode="numeric" required>
                 <div class="form-text">Solo números (7 a 9 dígitos).</div>
-                <div class="invalid-feedback">Ingresá un DNI válido.</div>
               </div>
 
+              <!-- EMAIL OCULTO -->
+              <input type="hidden" id="email-1" value="" class="d-none">
+
               <div class="col-12">
-                <label class="form-label">Comentarios (opcional – dieta/restricciones)</label>
-                <textarea id="comentarios-1" class="form-control" rows="2" placeholder="(opcional)"></textarea>
+                <label class="form-label">Comentarios (opcional)</label>
+                <textarea id="comentarios-1" class="form-control"></textarea>
               </div>
+
+              <input type="hidden" id="fecha-1">
             </div>
           </div>
 
-          <!-- REGISTROS 2–5 GENERADOS AUTOMÁTICAMENTE -->
+          <!-- REGISTROS 2..5 GENERADOS -->
           <script>
             for (let i = 2; i <= 5; i++) {
               document.write(`
                 <div class="registro oculto" data-index="${i}">
                   <h5>Persona ${i}</h5>
                   <div class="row g-3">
+
                     <div class="col-12">
                       <label class="form-label">Nombre *</label>
                       <input type="text" id="nombre-${i}" class="form-control">
-                      <div class="invalid-feedback">El nombre es obligatorio.</div>
                     </div>
+
                     <div class="col-12">
                       <label class="form-label">Apellido *</label>
                       <input type="text" id="apellido-${i}" class="form-control">
-                      <div class="invalid-feedback">El apellido es obligatorio.</div>
                     </div>
+
                     <div class="col-12">
                       <label class="form-label">DNI *</label>
                       <input type="text" id="dni-${i}" class="form-control" maxlength="9" inputmode="numeric">
-                      <div class="form-text">Solo números (7 a 9 dígitos).</div>
-                      <div class="invalid-feedback">Ingresá un DNI válido.</div>
                     </div>
+
+                    <!-- EMAIL OCULTO -->
+                    <input type="hidden" id="email-${i}" class="d-none">
+
                     <div class="col-12">
                       <label class="form-label">Comentarios</label>
-                      <textarea id="comentarios-${i}" class="form-control" rows="2" placeholder="(opcional)"></textarea>
+                      <textarea id="comentarios-${i}" class="form-control"></textarea>
                     </div>
+
+                    <input type="hidden" id="fecha-${i}">
                   </div>
                 </div>
               `);
             }
           </script>
+
         </div>
 
         <div class="d-flex gap-2 mt-3">
           <button type="button" id="btnAgregar" class="btn btn-outline-secondary flex-fill">
             Agregar otra persona
           </button>
+
           <button type="submit" class="btn btn-success flex-fill">
             ENVIAR
           </button>
         </div>
-      </form>
 
-      <div id="alerta" class="alert mt-3 d-none"></div>
+      </form>
     </div>
 
-    <!-- RESULTADO (se muestra tras ENVIAR) -->
-    <div id="resultado" class="mt-4 d-none">
+    <!-- RESULTADO -->
+    <div id="resultado" class="d-none mt-4">
       <div class="card">
         <div class="card-body">
-          <h5 class="card-title mb-3 text-success">Muchas gracias por confirmar tu presencia</h5>
-          <p class="mb-2">A nombre de:</p>
-          <ul id="listaNombres" class="mb-0"></ul>
+          <h4 class="text-success mb-3">Muchas gracias por confirmar tu presencia</h4>
+          <p>Personas confirmadas:</p>
+          <ul id="listaNombres"></ul>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Bootstrap JS -->
+  <!-- Bootstrap -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Pegar aquí la URL del WebApp (debe terminar en /exec)
-    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzN7znUk70M2EYjRk_5u4FgHO374tc2eTcffjXaGQqhacZH6B92ujkVkivpitY6Jbd-/exec";
 
-    const btnConfirmar   = document.getElementById("btnConfirmar");
-    const formContainer  = document.getElementById("form-container");
-    const btnAgregar     = document.getElementById("btnAgregar");
-    const alerta         = document.getElementById("alerta");
-    const resultadoBox   = document.getElementById("resultado");
+    const WEBAPP_URL =
+      "https://script.google.com/macros/s/AKfycbzN7znUk70M2EYjRk_5u4FgHO374tc2eTcffjXaGQqhacZH6B92ujkVkivpitY6Jbd-/exec";
+
+    const botonInicial = document.getElementById("boton-inicial");
+    const btnConfirmar = document.getElementById("btnConfirmar");
+    const formContainer = document.getElementById("form-container");
+    const btnAgregar = document.getElementById("btnAgregar");
+    const resultado = document.getElementById("resultado");
     const listaNombresEl = document.getElementById("listaNombres");
 
-    // 1) Al click en "Confirmar Asistencia": ocultar botón y mostrar formulario
+    // 1️⃣ AL HACER CLICK EN CONFIRMAR → OCULTAR BOTÓN / MOSTRAR FORMULARIO
     btnConfirmar.addEventListener("click", () => {
-      btnConfirmar.classList.add("d-none");         // desaparece el botón
-      formContainer.classList.remove("oculto");     // aparece el formulario
+      botonInicial.classList.add("d-none");
+      formContainer.classList.remove("oculto");
+      setFechaHoy();
     });
 
-    // Agregar persona (máximo 5)
+    // Agregar persona
     btnAgregar.addEventListener("click", () => {
       const ocultos = [...document.querySelectorAll(".registro.oculto")];
       if (ocultos.length > 0) ocultos[0].classList.remove("oculto");
     });
 
-    // DNI solo números (máx 9)
-    document.addEventListener("input", (e) => {
-      if (e.target.id && e.target.id.startsWith("dni-")) {
-        e.target.value = e.target.value.replace(/\D/g, "").substring(0, 9);
+    // Fecha automática
+    function setFechaHoy() {
+      const hoy = new Date().toISOString().split("T")[0];
+      for (let i = 1; i <= 5; i++) {
+        let f = document.getElementById(`fecha-${i}`);
+        if (f) f.value = hoy;
       }
+    }
+
+    // Solo números
+    document.addEventListener("input", (e) => {
+      if (e.target.id.startsWith("dni-"))
+        e.target.value = e.target.value.replace(/\D/g, "").substring(0, 9);
     });
 
-    function val(id) { return document.getElementById(id)?.value.trim() || ""; }
-    function marcarInvalido(id) { document.getElementById(id).classList.add("is-invalid"); }
-    function limpiarInvalidos() { document.querySelectorAll(".is-invalid").forEach(e => e.classList.remove("is-invalid")); }
-    function mostrarAlerta(msg, tipo="success") {
-      alerta.className = `alert alert-${tipo}`;
-      alerta.textContent = msg;
-      alerta.classList.remove("d-none");
+    function val(id) {
+      return document.getElementById(id)?.value.trim() || "";
     }
 
-    // Validaciones básicas de front (sin email/fecha)
-    function validarRegistro(i, visible) {
-      const nombre = val(`nombre-${i}`);
-      const apellido = val(`apellido-${i}`);
-      const dni = val(`dni-${i}`);
-      const comentarios = val(`comentarios-${i}`);
-      const dniRegex = /^\d{7,9}$/;
-
-      // ignorar completamente si está oculto y vacío
-      if (!visible && !nombre && !apellido && !dni && !comentarios) {
-        return { ok: true, data: null };
-      }
-
-      let ok = true;
-      if (!nombre) { marcarInvalido(`nombre-${i}`); ok = false; }
-      if (!apellido) { marcarInvalido(`apellido-${i}`); ok = false; }
-      if (!dni || !dniRegex.test(dni)) { marcarInvalido(`dni-${i}`); ok = false; }
-
-      return { ok, data: { nombre, apellido, dni, comentarios } };
-    }
-
-    // 3) Envío: request simple sin preflight; al terminar se muestra lista + mensaje y se oculta el formulario
+    // 3️⃣ ENVIAR FORMULARIO → OCULTAR FORM + MOSTRAR LISTA Y MENSAJE
     document.getElementById("asistenciaForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      limpiarInvalidos();
 
       const registros = [];
-      let valido = true;
+      listaNombresEl.innerHTML = "";
 
       for (let i = 1; i <= 5; i++) {
-        const regDiv = document.querySelector(`.registro[data-index="${i}"]`);
-        const visible = !regDiv.classList.contains("oculto");
-        const res = validarRegistro(i, visible);
-        if (!res.ok) valido = false;
-        if (res.data) {
-          const { nombre, apellido, dni, comentarios } = res.data;
-          if (nombre || apellido || dni || comentarios) registros.push(res.data);
-        }
+        let nombre = val(`nombre-${i}`);
+        let apellido = val(`apellido-${i}`);
+        let dni = val(`dni-${i}`);
+        let comentarios = val(`comentarios-${i}`);
+        let email = val(`email-${i}`);
+        let fecha = val(`fecha-${i}`);
+
+        if (!nombre && !apellido && !dni && !comentarios) continue;
+
+        registros.push({ nombre, apellido, dni, email, comentarios, fecha });
+
+        // mostrar lista en pantalla
+        const li = document.createElement("li");
+        li.textContent = `${nombre} ${apellido}`;
+        listaNombresEl.appendChild(li);
       }
 
-      if (!valido) {
-        mostrarAlerta("Revisá los campos marcados en rojo.", "danger");
-        return;
-      }
-      if (registros.length === 0) {
-        mostrarAlerta("Cargá al menos una persona.", "warning");
-        return;
-      }
+      await fetch(WEBAPP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ registros })
+      });
 
-      try {
-        // Envío sin CORS/preflight
-        await fetch(WEBAPP_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ registros })
-        });
+      // ocultar formulario
+      formContainer.classList.add("d-none");
 
-        // Construir lista de nombres para mostrar
-        listaNombresEl.innerHTML = "";
-        registros.forEach(r => {
-          const li = document.createElement("li");
-          li.textContent = `${r.nombre} ${r.apellido}`;
-          listaNombresEl.appendChild(li);
-        });
-
-        // Ocultar formulario y mostrar resultado
-        document.getElementById("asistenciaForm").reset();
-        formContainer.classList.add("oculto");
-        resultadoBox.classList.remove("d-none");
-        alerta.classList.add("d-none"); // por si había alertas previas
-
-      } catch (err) {
-        console.error(err);
-        mostrarAlerta("Ocurrió un error de red. Intentá nuevamente.", "danger");
-      }
+      // mostrar resultado
+      resultado.classList.remove("d-none");
     });
   </script>
-</body>
-</html>
+
+</

@@ -42,7 +42,7 @@
 
           <!-- REGISTRO 1 -->
           <div class="registro" data-index="1">
-            <h5>Persona 1</h5>
+            <h5>Invitado 1</h5>
 
             <div class="row g-3">
               <div class="col-12">
@@ -115,7 +115,7 @@
 
         <div class="d-flex gap-2 mt-3">
           <button type="button" id="btnAgregar" class="btn btn-outline-secondary flex-fill">
-            Agregar otra persona
+            Agregar otro Invitado
           </button>
 
           <button type="submit" class="btn btn-success flex-fill">
@@ -131,7 +131,7 @@
       <div class="card">
         <div class="card-body">
           <h4 class="text-success mb-3">Muchas gracias por confirmar tu presencia</h4>
-          <p>Personas confirmadas:</p>
+          <p></p>
           <ul id="listaNombres"></ul>
         </div>
       </div>
@@ -218,7 +218,7 @@
       }
 
       if (registros.length === 0) {
-        alert("Cargá al menos una persona.");
+        alert("Cargá al menos un Invitado.");
         return;
       }
 
@@ -246,4 +246,5 @@
   </script>
 
 </body>
+
 </html>
